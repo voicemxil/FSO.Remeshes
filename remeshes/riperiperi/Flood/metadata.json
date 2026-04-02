@@ -1,0 +1,5 @@
+{
+  "name": "Flood",
+  "description": "Remeshes for all joining tiles of flood.iff. This pack simply projects the original flood sprite onto a plane, with some UV stretching tricks to help it seamlessly tile.",
+  "url": "https://forum.freeso.org/threads/path-of-least-resistance-flood-pack.6261/"
+}

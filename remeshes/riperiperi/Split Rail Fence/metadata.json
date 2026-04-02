@@ -1,0 +1,4 @@
+{
+  "name": "Split Rail Fence",
+  "description": "Example remesh that was distributed with the game. Simply cleans up the generated mesh for the fence, as it was completely incomprehensible before."
+}
