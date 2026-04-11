@@ -1,0 +1,170 @@
+# This workflow builds remesh packages.
+# On the main branch, any contributor trigger a release publish.
+# Based lightly off of the fso launcher release process.
+
+name: remesh-ci
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-remeshes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Checkout FreeSO Tools
+        uses: actions/checkout@v6
+        with:
+          repository: 'riperiperi/FreeSO'
+          ref: 'archive-experiment-temp' # Change to main when archive is merged
+          path: 'FreeSO'
+
+      - name: Set up Dotnet
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Build Remeshes
+        run: |
+          dotnet run -- package-remeshes "../../../../remeshes/" -l -o "../../../../dist/"
+        working-directory: FreeSO/Other/tools/FSO.Packager
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: remesh-packages
+          path: |
+            dist/*
+
+  create-release:
+    needs: [build-remeshes]
+    runs-on: ubuntu-latest
+    environment:
+      name: "prod"
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      
+    - name: Get version
+      uses: nyaa8/package-version@v1
+      with:
+        path: 'app/package.json'
+        follow-symlinks: 'false'
+
+    - name: Calculate release type counter
+      id: release_type_counter
+      run: |
+        git fetch --prune --unshallow --tags
+        branch_name="${GITHUB_REF#refs/heads/}"
+        sanitized_branch_name="${branch_name//[^a-zA-Z0-9]/-}"
+        if [ "$branch_name" == "main" ]; then
+          release_type="prod"
+        else
+          release_type=$sanitized_branch_name
+        fi
+        echo "RELEASE_TYPE=$release_type" >> $GITHUB_ENV
+
+        tags_with_counter=$(git tag --list | grep -E "^${{ env.PACKAGE_VERSION }}-${release_type}\.[0-9]+$" || true)
+        max_counter=0
+        for tag in $tags_with_counter; do
+          current_counter=$(echo $tag | sed -E "s/^${{ env.PACKAGE_VERSION }}-${release_type}\.([0-9]+)$/\1/")
+          if [[ $current_counter -gt $max_counter ]]; then
+            max_counter=$current_counter
+          fi
+        done
+
+        counter=$((max_counter + 1))
+        echo "COUNTER=$counter" >> $GITHUB_ENV
+        full_version_name="${{ env.PACKAGE_VERSION }}-$release_type.$counter"
+        echo "FULL_VERSION_NAME=$full_version_name" >> $GITHUB_ENV
+
+    - name: Get latest release tag
+      id: latest_release_tag
+      run: |
+        release_type="${{ env.RELEASE_TYPE }}"
+        latest_release_tag=$(git tag --sort=committerdate | grep -E "${release_type}\.[0-9]+$" | tail -1 || true)
+        if [ -z "$latest_release_tag" ]; then
+          echo "No previous tag found for release type $release_type"
+        else
+          echo "LATEST_RELEASE_TAG=$latest_release_tag" >> $GITHUB_ENV
+        fi
+
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        if [ "${{ env.RELEASE_TYPE }}" == "prod" ]; then
+          release_notes="This is an official release of the FreeSO remesh package. It should automatically be available for download in the FreeSO client."
+        else
+          release_notes="This is a development remesh package."          
+        fi
+    
+        commit_count=$(git rev-list --count ${{ env.LATEST_RELEASE_TAG }}..HEAD)
+        if [ "$commit_count" != "0" ]; then
+          if [ "$commit_count" == "1" ]; then
+            changes_word="change"
+            verb="has"
+          else
+            changes_word="changes"
+            verb="have"
+          fi
+          release_notes=$(printf "%s\n\nThere %s been %s %s since the last release. See the [list of changes](https://github.com/${{ github.repository }}/compare/${{ env.LATEST_RELEASE_TAG }}...${{ env.FULL_VERSION_NAME }})." "$release_notes" "$verb" "$commit_count" "$changes_word")
+        fi
+    
+        echo "$release_notes" > release_notes.txt
+
+    - name: Create release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag_name: ${{ env.FULL_VERSION_NAME }}
+        name: Release ${{ env.FULL_VERSION_NAME }}
+        body_path: release_notes.txt
+        draft: false
+        prerelease: ${{ github.ref != 'refs/heads/main' }}
+
+    - name: Download remeshes
+      uses: actions/download-artifact@v4
+      with:
+        name: remesh-packages
+        path: release
+
+    - name: Upload release assets
+      uses: actions/github-script@v5
+      with:
+        script: |
+          const fs = require( 'fs' );
+          const path = require( 'path' );
+          const directoryPath = 'release';
+          const files = fs.readdirSync( directoryPath );
+          
+          const release = await github.rest.repos.getReleaseByTag( {
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            tag: process.env.FULL_VERSION_NAME,
+          } );
+          
+          for ( const file of files ) {
+            const filePath = path.join( directoryPath, file );
+            const content = fs.readFileSync( filePath );
+            await github.rest.repos.uploadReleaseAsset( {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release.data.id,
+              name: file,
+              data: content,
+              headers: {
+                'content-type': 'application/octet-stream',
+                'content-length': content.length
+              }
+            } );
+          }
+        github-token: ${{ secrets.GITHUB_TOKEN }}
