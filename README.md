@@ -2,9 +2,7 @@
 
 Hand-authored graphics for [FreeSO](https://github.com/riperiperi/FreeSO) and [Simitone](https://github.com/riperiperi/Simitone)'s 3D mode, made to replace the meshes automatically generated from sprite graphics.
 
-See Releases for the latest remesh package for either FreeSO or Simitone, built off of the main branch.
-
-_NOTE: as of right now, the automatic packager is not active_
+See [Releases](https://github.com/riperiperi/FSO.Remeshes/releases) for the latest remesh package for either FreeSO or Simitone, built off of the main branch.
 
 ## About
 
@@ -46,9 +44,9 @@ Feel free to make PRs to update this metadata without any mesh changes.
 }
 ```
 
-### Package Metadata
+### Group Metadata
 
-`metadata.json` in the package folder. Names the package, includes a link to its source, gives it a small optional description and includes some configuration that affects how it's packaged.
+`metadata.json` in the group folder. Names the group, includes a link to its source, gives it a small optional description and includes some configuration that affects how it's packaged.
 
 ```json
 {
@@ -59,6 +57,16 @@ Feel free to make PRs to update this metadata without any mesh changes.
   "priority": 1, // (optional) Resolves file conflicts by choosing files with a higher priority. Defaults to 0.
 }
 ```
+
+### Simitone Aliases
+
+A JSON object in `remeshes/metadata.json` defines some rules for how to map TSO filenames to TS1 without duplicating a remesh, as there are a few cases where an object is in both games but the filename has changed.
+
+There are some more complex changes where an object has moved between files, seen with TSO's `trees3` which takes a few files from different places in TS1. For this file, you can see specific mappings from DGRPs in `trees3` to DGRPs in different TS1 files. For this type of mapping to work, the texture IDs must match the mapping's drawgroup range, and not collide with any other textures in the target file (with the _old_ id).
+
+If you notice discrepancies like this yourself, you can add these entries to make your meshes work in both FreeSO and Simitone.
+
+If you're unsure, or your model/textures contain _differences_ between TS1/TSO, then simply create another remesh group and add a `"game:"` to its metadata file.
 
 ## Contributing
 
