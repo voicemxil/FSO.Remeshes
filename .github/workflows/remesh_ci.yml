@@ -34,7 +34,7 @@ jobs:
       - name: Build Remeshes
         run: |
           mkdir "../../../../dist/"
-          dotnet run -- package-remeshes "../../../../remeshes/" -l -o "../../../../dist/"
+          dotnet run -c Release -- package-remeshes "../../../../remeshes/" -l -o "../../../../dist/"
         working-directory: FreeSO/Other/tools/FSO.Packager
 
       - name: Upload Artifacts
@@ -124,6 +124,7 @@ jobs:
         name: Release ${{ env.FULL_VERSION_NAME }}
         body_path: release_notes.txt
         draft: false
+        target_commitish: ${{ github.sha }}
         prerelease: ${{ github.ref != 'refs/heads/main' }}
 
     - name: Download remeshes

@@ -1,5 +1,46 @@
 {
   "name": "FreeSO Official Remesh Pack",
+  "id": "fso-remeshes",
   "description": "An officially managed pack of remeshes for FreeSO and Simitone",
-  "url": "https://github.com/riperiperi/FSO.Remeshes/"
+  "url": "https://github.com/riperiperi/FSO.Remeshes/",
+  "alias": {
+    "simitone": [
+      { "from": "doors3_iff", "to": "doors3_sp_iff" },
+      { "from": "gamecompdrawacard_iff", "to": "charades_iff" },
+      { "from": "fenceflowersnow_iff", "to": "plantboxfence_iff" },
+      { "from": "column5_iff", "to": "columns5_iff" },
+      { "from": "chairshd_hd_iff", "to": "chairshd_iff" },
+      { "from": "columnarchaquaduct_iff", "to": "columnarchdeluxe_iff" },
+      { "from": "trees3_iff", "split": [
+        {
+          "name": "Mulberry Tree",
+          "to": "trees_iff",
+          "dgrpFrom": 1600,
+          "range": 4,
+          "dgrpTo": 400
+        },
+        {
+          "name": "Pine Tree",
+          "to": "treeshd_iff",
+          "dgrpFrom": 600,
+          "range": 4,
+          "dgrpTo": 600
+        },
+        {
+          "name": "Spruce Tree",
+          "to": "treeshd_iff",
+          "dgrpFrom": 500,
+          "range": 4,
+          "dgrpTo": 500
+        },
+        {
+          "name": "Fir Tree",
+          "to": "treeshd_iff",
+          "dgrpFrom": 400,
+          "range": 4,
+          "dgrpTo": 400
+        }
+      ]}
+    ]
+  }
 }
