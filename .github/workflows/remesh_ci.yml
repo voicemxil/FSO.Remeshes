@@ -33,6 +33,7 @@ jobs:
 
       - name: Build Remeshes
         run: |
+          mkdir "../../../../dist/"
           dotnet run -- package-remeshes "../../../../remeshes/" -l -o "../../../../dist/"
         working-directory: FreeSO/Other/tools/FSO.Packager
 
