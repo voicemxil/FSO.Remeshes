@@ -1,6 +1,10 @@
 # This workflow builds remesh packages.
 # On the main branch, any contributor trigger a release publish.
 # Based lightly off of the fso launcher release process.
+#
+# OpenSO fork: we keep the `-l` (legacy loose-file) output and publish ONLY the
+# loose `*-legacy.zip` packs (our client loads loose `.fsom` directly). The merged
+# DBPF `.dat` packages are still built by the tool but intentionally not uploaded.
 
 name: remesh-ci
 
@@ -11,6 +15,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build-remeshes:
@@ -42,14 +47,14 @@ jobs:
         with:
           name: remesh-packages
           path: |
-            dist/*
+            dist/*legacy.zip
 
   create-release:
     needs: [build-remeshes]
     runs-on: ubuntu-latest
     environment:
       name: "prod"
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -96,11 +101,11 @@ jobs:
       id: release_notes
       run: |
         if [ "${{ env.RELEASE_TYPE }}" == "prod" ]; then
-          release_notes="This is an official release of the FreeSO remesh package. It should automatically be available for download in the FreeSO client."
+          release_notes="This is an OpenSO build of the FreeSO remesh package (loose-file pack). Content mirrored from riperiperi/FSO.Remeshes; meshes remain under their authors' control (see metadata.json / LICENSE.txt)."
         else
-          release_notes="This is a development remesh package."          
+          release_notes="This is a development remesh package."
         fi
-    
+
         commit_count=$(git rev-list --count ${{ env.LATEST_RELEASE_TAG }}..HEAD)
         if [ "$commit_count" != "0" ]; then
           if [ "$commit_count" == "1" ]; then
@@ -112,7 +117,7 @@ jobs:
           fi
           release_notes=$(printf "%s\n\nThere %s been %s %s since the last release. See the [list of changes](https://github.com/${{ github.repository }}/compare/${{ env.LATEST_RELEASE_TAG }}...${{ env.FULL_VERSION_NAME }})." "$release_notes" "$verb" "$commit_count" "$changes_word")
         fi
-    
+
         echo "$release_notes" > release_notes.txt
 
     - name: Create release
@@ -141,13 +146,13 @@ jobs:
           const path = require( 'path' );
           const directoryPath = 'release';
           const files = fs.readdirSync( directoryPath );
-          
+
           const release = await github.rest.repos.getReleaseByTag( {
             owner: context.repo.owner,
             repo: context.repo.repo,
             tag: process.env.FULL_VERSION_NAME,
           } );
-          
+
           for ( const file of files ) {
             const filePath = path.join( directoryPath, file );
             const content = fs.readFileSync( filePath );
